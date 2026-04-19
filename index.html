@@ -491,8 +491,10 @@ function doPrint(listMode){
     const styles=Array.from(document.styleSheets).map(ss=>{
       try{return Array.from(ss.cssRules).map(r=>r.cssText).join("\n");}catch(e){return "";}
     }).join("\n");
+    // For list mode: force-show the print-list div inline (overrides display:none from main styles)
+    const listHTMLVisible=listHTML.replace(/class="print-list"/,'class="print-list" style="display:block!important"');
     const bodyContent=listMode
-      ? `${headerHTML}${siHTML}<div style="max-width:860px;margin:0 auto;padding:0 1.25rem;">${document.getElementById("printDate").outerHTML}${listHTML}</div>`
+      ? `${headerHTML}${siHTML}<div style="max-width:860px;margin:0 auto;padding:0 1.25rem;">${document.getElementById("printDate").outerHTML}${listHTMLVisible}</div>`
       : `${headerHTML}${siHTML}<div id="printDateWrap">${document.getElementById("printDate").outerHTML}</div>${mainHTML}`;
     const win=window.open("","_blank");
     if(!win){alert("Please allow popups for this page, or use the desktop browser for printing.");return;}
@@ -517,10 +519,14 @@ function doPrint(listMode){
         .section-divider{display:none!important;}
         .print-list{display:block!important;}
         `:``}
-        body{padding-bottom:0;}
+        html,body{min-height:0!important;height:auto!important;padding-bottom:0!important;margin:0!important;}
         .print-btn-bar{text-align:center;padding:1rem;background:#f4edd8;border-bottom:1px solid #c8a85a;}
         .print-btn-bar button{padding:.5rem 1.5rem;background:#2a4a18;color:#f4edd8;border:none;font-size:.85rem;font-family:Georgia,serif;cursor:pointer;border-radius:2px;}
-        @media print{.print-btn-bar{display:none!important;}}
+        @media print{
+          .print-btn-bar{display:none!important;}
+          html,body{min-height:0!important;height:auto!important;margin:0!important;padding:0!important;}
+          body::after{display:none!important;content:none!important;}
+        }
       </style>
     </head><body>
       <div class="print-btn-bar"><button onclick="window.print()">Print / Save as PDF</button></div>
