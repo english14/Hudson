@@ -345,10 +345,10 @@ const DATABASE=[
   {hudson:"Cow-bird",english:"Shiny Cowbird",spanish:"Tordo renegrido",scientific:"Molothrus bonariensis",type:"animal",wikiPage:"Shiny_cowbird",inatSearch:"Molothrus bonariensis"},
   {hudson:"Scarlet tyrant-bird",english:"Vermilion Flycatcher",spanish:"Churrinche",scientific:"Pyrocephalus rubinus",type:"animal",wikiPage:"Vermilion_flycatcher",inatSearch:"Pyrocephalus rubinus"},
   {hudson:"Hummingbird",english:"Glittering-bellied Emerald",spanish:"Picaflor común",scientific:"Chlorostilbon lucidus",type:"animal",wikiPage:"Glittering-bellied_emerald",inatSearch:"Chlorostilbon lucidus"},
-  {hudson:"Swallow",english:"Swallow",spanish:"Golondrina",scientific:"",type:"animal",wikiPage:null,inatSearch:"swallow bird Argentina pampas"},
+  {hudson:"Swallow",english:"Swallow",spanish:"Golondrina",scientific:"",type:"animal",wikiPage:null,inatSearch:"Tachycineta leucorrhoa"},
   {hudson:"Yellow-billed cuckoo / kowe-kowe",english:"Yellow-billed Cuckoo",spanish:"Cuclillo pico amarillo",scientific:"Coccyzus americanus",type:"animal",wikiPage:"Yellow-billed_cuckoo",inatSearch:"Coccyzus americanus"},
-  {hudson:"Duck",english:"Duck",spanish:"Pato",scientific:"",type:"animal",wikiPage:null,inatSearch:"duck Buenos Aires Argentina wetland"},
-  {hudson:"Heron",english:"Heron",spanish:"Garza",scientific:"",type:"animal",wikiPage:null,inatSearch:"Ardea cocoi Buenos Aires Argentina"},
+  {hudson:"Duck",english:"Duck",spanish:"Pato",scientific:"",type:"animal",wikiPage:null,inatSearch:"Dendrocygna viduata"},
+  {hudson:"Heron",english:"Heron",spanish:"Garza",scientific:"",type:"animal",wikiPage:null,inatSearch:"Ardea alba"},
   {hudson:"Flamingo",english:"Chilean Flamingo",spanish:"Flamenco austral",scientific:"Phoenicopterus chilensis",type:"animal",wikiPage:"Chilean_flamingo",inatSearch:"Phoenicopterus chilensis"},
   {hudson:"Eared doves",english:"Eared Dove",spanish:"Torcaza",scientific:"Zenaida auriculata",type:"animal",wikiPage:"Eared_dove",inatSearch:"Zenaida auriculata"},
   {hudson:"Carancho",english:"Southern Caracara",spanish:"Carancho",scientific:"Caracara plancus",type:"animal",wikiPage:"Southern_caracara",inatSearch:"Caracara plancus"},
@@ -358,7 +358,7 @@ const DATABASE=[
   {hudson:"Black acacia",english:"Honey Locust",spanish:"Acacia negra",scientific:"Gleditsia triacanthos",type:"plant",wikiPage:"Gleditsia_triacanthos",inatSearch:"Gleditsia triacanthos"},
   {hudson:"Peach tree",english:"Peach",spanish:"Duraznero",scientific:"Prunus persica",type:"plant",wikiPage:"Prunus_persica",inatSearch:"Prunus persica"},
   {hudson:"Poplar tree",english:"Poplar",spanish:"Álamo",scientific:"Populus nigra",type:"plant",wikiPage:"Populus_nigra",inatSearch:"Populus nigra"},
-  {hudson:"Cardoon",english:"Cardoon / Giant Wild Thistle",spanish:"Cardo",scientific:"Cynara cardunculus",type:"plant",wikiPage:"Cynara_cardunculus",inatSearch:"Cynara cardunculus"},
+  {hudson:"Cardoon Thistle",english:"Cardoon / Giant Wild Thistle",spanish:"Cardo",scientific:"Cynara cardunculus",type:"plant",wikiPage:"Cynara_cardunculus",inatSearch:"Cynara cardunculus"},
   {hudson:"Violet",english:"Common Violet",spanish:"Violeta",scientific:"Viola odorata",type:"plant",wikiPage:"Viola_odorata",inatSearch:"Viola odorata"}
 ];
 
@@ -464,10 +464,68 @@ function syncPrintStudent(){
 
 function doPrint(listMode){
   syncPrintStudent();buildPrintList();
-  if(listMode)document.body.classList.add("print-list-mode");
-  else document.body.classList.remove("print-list-mode");
-  window.print();
-  document.body.classList.remove("print-list-mode");
+  const isMobile=/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(isMobile){
+    // On mobile, window.print() snapshots before DOM changes apply.
+    // Open a new window with only the relevant content and print that.
+    const studentName=document.getElementById("pName").textContent;
+    const studentDate=document.getElementById("pDate").textContent;
+    const studentPlace=document.getElementById("pPlace").textContent;
+    const printDateText=document.getElementById("printDate").textContent;
+    // Grab header HTML
+    const headerHTML=document.querySelector(".site-header").outerHTML;
+    // Grab student info print HTML
+    const siHTML=document.querySelector(".student-info-print").outerHTML;
+    // Grab print list HTML (always show in new window for list mode)
+    const listHTML=document.querySelector(".print-list").outerHTML;
+    // Grab full checklist grid HTML (for non-list mode)
+    const mainHTML=document.querySelector(".main-checklist")?document.querySelector(".main-checklist").outerHTML:"";
+    // Build styles
+    const styles=Array.from(document.styleSheets).map(ss=>{
+      try{return Array.from(ss.cssRules).map(r=>r.cssText).join("\n");}catch(e){return "";}
+    }).join("\n");
+    const bodyContent=listMode
+      ? `${headerHTML}${siHTML}<div style="max-width:860px;margin:0 auto;padding:0 1.25rem;">${document.getElementById("printDate").outerHTML}${listHTML}</div>`
+      : `${headerHTML}${siHTML}<div id="printDateWrap">${document.getElementById("printDate").outerHTML}</div>${mainHTML}`;
+    const win=window.open("","_blank");
+    if(!win){alert("Please allow popups for this page, or use the desktop browser for printing.");return;}
+    win.document.write(`<!DOCTYPE html><html lang="en"><head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1.0">
+      <title>Hudson's Pampas — Checklist</title>
+      <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">
+      <style>${styles}
+        @media print{
+          .no-print,.search-wrap,.action-btns,.modal-overlay,
+          .check-label,.delete-btn,.add-photo,.progress-wrap,.save-notice,
+          .student-info-label{display:none!important;}
+          .student-info-print{display:block!important;}
+          .print-date{display:block!important;}
+          body{background:#fff;}
+        }
+        ${listMode?`
+        .main-checklist{display:none!important;}
+        .ombu-wrap{display:none!important;}
+        .footer-birds{display:none!important;}
+        .print-list{display:block!important;}
+        `:``}
+        body{padding-bottom:0;}
+        .print-btn-bar{text-align:center;padding:1rem;background:#f4edd8;border-bottom:1px solid #c8a85a;}
+        .print-btn-bar button{padding:.5rem 1.5rem;background:#2a4a18;color:#f4edd8;border:none;font-size:.85rem;font-family:Georgia,serif;cursor:pointer;border-radius:2px;}
+        @media print{.print-btn-bar{display:none!important;}}
+      </style>
+    </head><body>
+      <div class="print-btn-bar"><button onclick="window.print()">Print / Save as PDF</button></div>
+      ${bodyContent}
+    </body></html>`);
+    win.document.close();
+    win.onload=function(){win.print();};
+  } else {
+    if(listMode)document.body.classList.add("print-list-mode");
+    else document.body.classList.remove("print-list-mode");
+    window.print();
+    document.body.classList.remove("print-list-mode");
+  }
 }
 
 function switchTab(tab){
