@@ -148,7 +148,7 @@ body { font-family: var(--ff); font-weight: 300; background: var(--paper); color
   body.print-list-mode .print-list { display: block !important; }
   .no-print, .search-wrap, .action-btns, .modal-overlay,
   .check-label, .delete-btn, .add-photo, .progress-wrap, .save-notice,
-  .student-info-label { display: none !important; }
+  .student-info-label, .ombu-wrap, .footer-birds, .section-divider { display: none !important; }
   body { background: #fff; }
   .site-header { border-bottom: 1.5px solid #c8a85a; }
   .student-info-print { display: block !important; }
@@ -479,7 +479,14 @@ function doPrint(listMode){
     // Grab print list HTML (always show in new window for list mode)
     const listHTML=document.querySelector(".print-list").outerHTML;
     // Grab full checklist grid HTML (for non-list mode)
-    const mainHTML=document.querySelector(".main-checklist")?document.querySelector(".main-checklist").outerHTML:"";
+    // Clone to avoid modifying the actual page, then remove decorative elements
+    const mainElement=document.querySelector(".main-checklist");
+    let mainHTML="";
+    if(mainElement){
+      const clone=mainElement.cloneNode(true);
+      clone.querySelectorAll(".ombu-wrap,.footer-birds,.section-divider").forEach(el=>el.remove());
+      mainHTML=clone.outerHTML;
+    }
     // Build styles
     const styles=Array.from(document.styleSheets).map(ss=>{
       try{return Array.from(ss.cssRules).map(r=>r.cssText).join("\n");}catch(e){return "";}
@@ -498,7 +505,7 @@ function doPrint(listMode){
         @media print{
           .no-print,.search-wrap,.action-btns,.modal-overlay,
           .check-label,.delete-btn,.add-photo,.progress-wrap,.save-notice,
-          .student-info-label{display:none!important;}
+          .student-info-label,.section-divider,.ombu-wrap,.footer-birds{display:none!important;}
           .student-info-print{display:block!important;}
           .print-date{display:block!important;}
           body{background:#fff;}
@@ -507,6 +514,7 @@ function doPrint(listMode){
         .main-checklist{display:none!important;}
         .ombu-wrap{display:none!important;}
         .footer-birds{display:none!important;}
+        .section-divider{display:none!important;}
         .print-list{display:block!important;}
         `:``}
         body{padding-bottom:0;}
